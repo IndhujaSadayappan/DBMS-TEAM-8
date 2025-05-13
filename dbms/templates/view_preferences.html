@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header glass-card">
+        <h2>Student Preferences</h2>
+        <p>View all student preferences for colleges and courses</p>
+        
+        <div class="header-actions">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary glass-btn">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            
+            <a href="{{ url_for('generate_allotment') }}" class="btn btn-primary glass-btn">
+                <i class="fas fa-cogs"></i> Generate Allotment
+            </a>
+        </div>
+    </div>
+    
+    <div class="preferences-container glass-card">
+        <div class="filter-controls">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Search by student name...">
+                <i class="fas fa-search"></i>
+            </div>
+            
+            <div class="filter-dropdown">
+                <select id="college-filter">
+                    <option value="">All Colleges</option>
+                    {% set colleges = [] %}
+                    {% for pref in preferences %}
+                        {% if pref.college_name not in colleges %}
+                            {% set colleges = colleges + [pref.college_name] %}
+                            <option value="{{ pref.college_name }}">{{ pref.college_name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-dropdown">
+                <select id="course-filter">
+                    <option value="">All Courses</option>
+                    {% set courses = [] %}
+                    {% for pref in preferences %}
+                        {% if pref.course_name not in courses %}
+                            {% set courses = courses + [pref.course_name] %}
+                            <option value="{{ pref.course_name }}">{{ pref.course_name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div class="preferences-table-container">
+            <table class="data-table" id="preferences-table">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>12th Mark</th>
+                        <th>College</th>
+                        <th>Course</th>
+                        <th>Preference Order</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pref in preferences %}
+                    <tr data-student="{{ pref.student_name }}" data-college="{{ pref.college_name }}" data-course="{{ pref.course_name }}">
+                        <td>{{ pref.student_name }}</td>
+                        <td>{{ pref.twelfth_mark }}%</td>
+                        <td>{{ pref.college_name }}</td>
+                        <td>{{ pref.course_name }}</td>
+                        <td>{{ pref.preference_order }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search-input');
+        const collegeFilter = document.getElementById('college-filter');
+        const courseFilter = document.getElementById('course-filter');
+        const tableRows = document.querySelectorAll('#preferences-table tbody tr');
+        
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const collegeValue = collegeFilter.value;
+            const courseValue = courseFilter.value;
+            
+            tableRows.forEach(row => {
+                const studentName = row.getAttribute('data-student').toLowerCase();
+                const college = row.getAttribute('data-college');
+                const course = row.getAttribute('data-course');
+                
+                const matchesSearch = studentName.includes(searchTerm);
+                const matchesCollege = collegeValue === '' || college === collegeValue;
+                const matchesCourse = courseValue === '' || course === courseValue;
+                
+                if (matchesSearch && matchesCollege && matchesCourse) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        searchInput.addEventListener('input', filterTable);
+        collegeFilter.addEventListener('change', filterTable);
+        courseFilter.addEventListener('change', filterTable);
+    });
+</script>
+{% endblock %}

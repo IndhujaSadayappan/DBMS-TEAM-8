@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header glass-card">
+        <h2>Course Allotments</h2>
+        <p>View all student course allotments</p>
+        
+        <div class="header-actions">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary glass-btn">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            
+            <a href="{{ url_for('generate_allotment') }}" class="btn btn-primary glass-btn">
+                <i class="fas fa-cogs"></i> Generate New Allotment
+            </a>
+        </div>
+    </div>
+    
+    <div class="allotments-container glass-card">
+        <div class="filter-controls">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Search by student name...">
+                <i class="fas fa-search"></i>
+            </div>
+            
+            <div class="filter-dropdown">
+                <select id="college-filter">
+                    <option value="">All Colleges</option>
+                    {% set colleges = [] %}
+                    {% for allot in allotments %}
+                        {% if allot.college_name and allot.college_name not in colleges %}
+                            {% set colleges = colleges + [allot.college_name] %}
+                            <option value="{{ allot.college_name }}">{{ allot.college_name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-dropdown">
+                <select id="course-filter">
+                    <option value="">All Courses</option>
+                    {% set courses = [] %}
+                    {% for allot in allotments %}
+                        {% if allot.course_name and allot.course_name not in courses %}
+                            {% set courses = courses + [allot.course_name] %}
+                            <option value="{{ allot.course_name }}">{{ allot.course_name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-dropdown">
+                <select id="status-filter">
+                    <option value="">All Status</option>
+                    <option value="Allocated">Allocated</option>
+                    <option value="Not Allocated">Not Allocated</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="allotments-table-container">
+            <table class="data-table" id="allotments-table">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>12th Mark</th>
+                        <th>College</th>
+                        <th>Course</th>
+                        <th>Status</th>
+                        <th>Allotment Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for allot in allotments %}
+                    <tr data-student="{{ allot.student_name }}" data-college="{{ allot.college_name or '' }}" data-course="{{ allot.course_name or '' }}" data-status="{{ allot.status }}">
+                        <td>{{ allot.student_name }}</td>
+                        <td>{{ allot.twelfth_mark }}%</td>
+                        <td>{{ allot.college_name or 'N/A' }}</td>
+                        <td>{{ allot.course_name or 'N/A' }}</td>
+                        <td>
+                            {% if allot.status == 'Allocated' %}
+                                <span class="badge badge-success">Allocated</span>
+                            {% else %}
+                                <span class="badge badge-danger">Not Allocated</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ allot.allotment_date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search-input');
+        const collegeFilter = document.getElementById('college-filter');
+        const courseFilter = document.getElementById('course-filter');
+        const statusFilter = document.getElementById('status-filter');
+        const tableRows = document.querySelectorAll('#allotments-table tbody tr');
+        
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const collegeValue = collegeFilter.value;
+            const courseValue = courseFilter.value;
+            const statusValue = statusFilter.value;
+            
+            tableRows.forEach(row => {
+                const studentName = row.getAttribute('data-student').toLowerCase();
+                const college = row.getAttribute('data-college');
+                const course = row.getAttribute('data-course');
+                const status = row.getAttribute('data-status');
+                
+                const matchesSearch = studentName.includes(searchTerm);
+                const matchesCollege = collegeValue === '' || college === collegeValue;
+                const matchesCourse = courseValue === '' || course === courseValue;
+                const matchesStatus = statusValue === '' || status === statusValue;
+                
+                if (matchesSearch && matchesCollege && matchesCourse && matchesStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        searchInput.addEventListener('input', filterTable);
+        collegeFilter.addEventListener('change', filterTable);
+        courseFilter.addEventListener('change', filterTable);
+        statusFilter.addEventListener('change', filterTable);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="hero-section glass-card">
+    <div class="hero-content">
+        <h1>Welcome to Online Counselling Management System</h1>
+        <p>A comprehensive platform for college admissions and course allocation</p>
+        
+        <div class="hero-buttons">
+            <a href="{{ url_for('student_login') }}" class="btn btn-primary glass-btn">
+                <i class="fas fa-user-graduate"></i> Student Login/Signup
+            </a>
+            <a href="{{ url_for('admin_login') }}" class="btn btn-secondary glass-btn">
+                <i class="fas fa-user-shield"></i> Admin Login/Signup
+            </a>
+        </div>
+    </div>
+    
+    <div class="hero-image">
+        <img src="{{ url_for('static', filename='img/counselling.svg') }}" alt="Counselling Illustration">
+    </div>
+</div>
+
+<div class="features-section">
+    <h2>Key Features</h2>
+    
+    <div class="features-grid">
+        <div class="feature-card glass-card">
+            <i class="fas fa-university"></i>
+            <h3>College Selection</h3>
+            <p>Browse and select from a wide range of colleges and courses</p>
+        </div>
+
+        <div class="feature-card glass-card">
+            <i class="fas fa-list-ol"></i>
+            <h3>Preference Management</h3>
+            <p>Set your college and course preferences in order of priority</p>
+        </div>
+
+        <div class="feature-card glass-card">
+            <i class="fas fa-chart-line"></i>
+            <h3>Merit-Based Allocation</h3>
+            <p>Automatic allocation based on marks and preferences</p>
+        </div>
+
+        <div class="feature-card glass-card">
+            <i class="fas fa-shield-alt"></i>
+            <h3>Secure System</h3>
+            <p>Secure login and data protection for all users</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header glass-card">
+        <h2>Welcome, {{ student.name }}</h2>
+        <p>Select your college and course preferences below</p>
+    </div>
+    
+    <div class="dashboard-content">
+        <div class="student-info glass-card">
+            <h3>Your Information</h3>
+            <div class="info-grid">
+                <div class="info-item"><span class="info-label">Name:</span> <span class="info-value">{{ student.name }}</span></div>
+                <div class="info-item"><span class="info-label">Email:</span> <span class="info-value">{{ student.email }}</span></div>
+                <div class="info-item"><span class="info-label">12th Mark:</span> <span class="info-value">{{ student.twelfth_mark }}%</span></div>
+                <div class="info-item"><span class="info-label">Category:</span> <span class="info-value">{{ student.category }}</span></div>
+            </div>
+        </div>
+
+        <!-- 🌟 NEW FLEX LAYOUT SECTION -->
+        <div class="dashboard-grid">
+            <!-- LEFT COLUMN -->
+            <div class="college-courses glass-card">
+                <h3>Available Colleges and Courses</h3>
+                <div class="college-list">
+                    {% for college in colleges %}
+                    <div class="college-item">
+                        <div class="college-header" onclick="toggleCollege({{ college.college_id }})">
+                            <h4>{{ college.name }}</h4>
+                            <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span>
+                        </div>
+                        <div class="college-courses" id="college-{{ college.college_id }}">
+                            <div class="college-details">
+                                <p><strong>Location:</strong> {{ college.location }}</p>
+                                <p><strong>Established:</strong> {{ college.est_year }}</p>
+                                <p><strong>Website:</strong> <a href="{{ college.website }}" target="_blank">{{ college.website }}</a></p>
+                                <p>{{ college.description }}</p>
+                            </div>
+                            <h5>Available Courses</h5>
+                            <div class="course-list">
+                                {% set courses = college_courses_map[college.college_id] %}
+                                {% for course in courses %}
+                                <div class="course-item" draggable="true" ondragstart="drag(event)" id="course-{{ college.college_id }}-{{ course.course_id }}">
+                                    <div class="course-info">
+                                        <h6>{{ course.name }}</h6>
+                                        <p><strong>Duration:</strong> {{ course.duration }}</p>
+                                        <p><strong>Department:</strong> {{ course.department }}</p>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-primary add-preference" onclick="addPreference({{ college.college_id }}, {{ course.course_id }}, '{{ college.name }}', '{{ course.name }}')">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div class="preference-list glass-card">
+                <h3>Your Preferences</h3>
+                <p>Drag and drop to reorder your preferences</p>
+                <form action="{{ url_for('save_preferences') }}" method="post" id="preferences-form">
+                    <div class="preferences-container" id="preferences-container" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        {% if preferences %}
+                            {% for pref in preferences %}
+                            <div class="preference-item" draggable="true" ondragstart="drag(event)" id="pref-{{ pref.college_id }}-{{ pref.course_id }}">
+                                <span class="preference-order">{{ loop.index }}</span>
+                                <div class="preference-info">
+                                    <h6>{{ pref.college_name }}</h6>
+                                    <p>{{ pref.course_name }}</p>
+                                </div>
+                                <input type="hidden" name="preferences[]" value="{{ pref.college_id }}_{{ pref.course_id }}">
+                                <button type="button" class="btn btn-sm btn-danger remove-preference" onclick="removePreference(this)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-preferences">
+                                <p>No preferences added yet. Add courses from the list on the left.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary glass-btn save-preferences">
+                        <i class="fas fa-save"></i> Save Preferences
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleCollege(collegeId) {
+        const element = document.getElementById(`college-${collegeId}`);
+        element.classList.toggle('active');
+        const icon = element.previousElementSibling.querySelector('.toggle-icon i');
+        icon.classList.toggle('fa-chevron-down');
+        icon.classList.toggle('fa-chevron-up');
+    }
+
+    function addPreference(collegeId, courseId, collegeName, courseName) {
+        const container = document.getElementById('preferences-container');
+        const emptyMessage = container.querySelector('.empty-preferences');
+        if (emptyMessage) emptyMessage.remove();
+        if (document.getElementById(`pref-${collegeId}-${courseId}`)) {
+            alert('This course is already in your preferences!');
+            return;
+        }
+        const prefCount = container.querySelectorAll('.preference-item').length + 1;
+        const prefItem = document.createElement('div');
+        prefItem.className = 'preference-item';
+        prefItem.draggable = true;
+        prefItem.id = `pref-${collegeId}-${courseId}`;
+        prefItem.setAttribute('ondragstart', 'drag(event)');
+        prefItem.innerHTML = `
+            <span class="preference-order">${prefCount}</span>
+            <div class="preference-info">
+                <h6>${collegeName}</h6>
+                <p>${courseName}</p>
+            </div>
+            <input type="hidden" name="preferences[]" value="${collegeId}_${courseId}">
+            <button type="button" class="btn btn-sm btn-danger remove-preference" onclick="removePreference(this)">
+                <i class="fas fa-times"></i>
+            </button>`;
+        container.appendChild(prefItem);
+        updatePreferenceOrder();
+    }
+
+    function removePreference(button) {
+        const prefItem = button.parentElement;
+        prefItem.remove();
+        const container = document.getElementById('preferences-container');
+        if (container.children.length === 0) {
+            container.innerHTML = `<div class="empty-preferences"><p>No preferences added yet. Add courses from the list on the left.</p></div>`;
+        } else {
+            updatePreferenceOrder();
+        }
+    }
+
+    function updatePreferenceOrder() {
+        const prefItems = document.querySelectorAll('.preference-item');
+        prefItems.forEach((item, index) => {
+            item.querySelector('.preference-order').textContent = index + 1;
+        });
+    }
+
+    function allowDrop(ev) { ev.preventDefault(); }
+
+    function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+
+    function drop(ev) {
+        ev.preventDefault();
+        const data = ev.dataTransfer.getData("text");
+        const draggedElement = document.getElementById(data);
+        let dropTarget = ev.target.closest('.preference-item') || document.getElementById('preferences-container');
+        dropTarget.parentNode.insertBefore(draggedElement, dropTarget);
+        updatePreferenceOrder();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const firstCollege = document.querySelector('.college-item .college-header');
+        if (firstCollege) {
+            const firstCollegeId = firstCollege.getAttribute('onclick').match(/\d+/)[0];
+            toggleCollege(firstCollegeId);
+        }
+    });
+</script>
+{% endblock %}
